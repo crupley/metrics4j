@@ -1,0 +1,6 @@
+name := "metrics4j"
+version := "1.0"
+scalaVersion := "2.11.7"
+libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.11.1"
+libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.11.1"
+libraryDependencies += "org.apache.logging.log4j" % "log4j-api-scala_2.11" % "11.0"
