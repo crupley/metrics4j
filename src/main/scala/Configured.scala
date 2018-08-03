@@ -1,11 +1,10 @@
 package metrics4j
 
-import org.apache.logging.log4j.{Level, LogManager}
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.config.Configurator
 import org.apache.logging.log4j.core.config.builder.api._
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration
-import org.apache.logging.log4j.scala.Logger
+import org.apache.logging.log4j.{Level, LogManager}
 
 
 object Configured {
@@ -16,41 +15,48 @@ object Configured {
 
   // Appenders
   val console: AppenderComponentBuilder = builder.newAppender("stdout", "Console")
-  builder.add(console)
 
   val file: AppenderComponentBuilder = builder.newAppender("log", "File")
   file.addAttribute("fileName", "logging.log")
-  builder.add(file)
+  file.addAttribute("append", "false") // overwrite file each time
 
   val rollingFile: AppenderComponentBuilder = builder.newAppender("rolling", "RollingFile")
   rollingFile.addAttribute("fileName", "rolling.log")
   rollingFile.addAttribute("filePattern", "rolling-%d{MM-dd-yy}.log.gz")
-  rollingFile.addAttribute("policy", "whatevs")
-  builder.add(rollingFile)
 
   // Filters
   val flow: FilterComponentBuilder = builder.newFilter("MarkerFilter", Filter.Result.ACCEPT, Filter.Result.DENY)
   flow.addAttribute("marker", "FLOW")
-  console.add(flow)
-  file.add(flow)
+  // this filter filters all my log statements
+  // console.add(flow)
+  // file.add(flow)
 
   // Layout
   val standard: LayoutComponentBuilder = builder.newLayout("PatternLayout")
   standard.addAttribute("pattern", "%d [%t] %-5level: %msg%n%throwable")
   console.add(standard)
-  file.add(standard)
+  // file.add(standard)
   rollingFile.add(standard)
 
+  val jpattern: LayoutComponentBuilder = builder.newLayout("PatternLayout")
+  jpattern.addAttribute("header", "[ // this is a new json file\n")
+  jpattern.addAttribute("pattern","""\t{"date" : "%d", "message" : "%msg"},\n""")
+  jpattern.addAttribute("footer", "] // this is the end of the json\n")
+  file.add(jpattern)
+
+  val json: LayoutComponentBuilder = builder.newLayout("JSONLayout")
+  // file.add(json) // doesn't work yet
+
   // Root logger
-  val rootLogger: RootLoggerComponentBuilder = builder.newRootLogger(Level.ERROR)
+  val rootLogger: RootLoggerComponentBuilder = builder.newRootLogger(Level.INFO)
   rootLogger.add(builder.newAppenderRef("stdout"))
-  rootLogger.add(builder.newAppenderRef("log"))
-  rootLogger.add(builder.newAppenderRef("rolling"))
   builder.add(rootLogger)
 
   // More loggers
   val logger2: LoggerComponentBuilder = builder.newLogger("com", Level.DEBUG)
+  logger2.add(builder.newAppenderRef("stdout"))
   logger2.add(builder.newAppenderRef("log"))
+  logger2.add(builder.newAppenderRef("rolling"))
   logger2.addAttribute("additivity", false)
   builder.add(logger2)
 
@@ -59,6 +65,10 @@ object Configured {
   triggeringPolicies.addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"))
   triggeringPolicies.addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "100M"))
   rollingFile.addComponent(triggeringPolicies)
+
+  // must add AFTER all configs are set
+  builder.add(console)
+  builder.add(file)
   builder.add(rollingFile)
 
   // initialize
@@ -67,8 +77,7 @@ object Configured {
   // write xml config
   builder.writeXmlConfiguration(System.out)
 
-  val logger = LogManager.getLogger()
-  //val logger = Logger(getClass)
+  val logger = LogManager.getLogger("com") // use a particular logger
 
   logger.error("test log")
 
@@ -82,5 +91,6 @@ object Configured {
     print(s"Trying log level: ${Level.ERROR}\t:  "); logger.error(msg); println()
     print(s"Trying log level: ${Level.FATAL}\t:  "); logger.fatal(msg); println()
     print(s"Trying log level: ${Level.TRACE}\t:  "); logger.trace(msg); println()
+    LogManager.shutdown() // must call to write the footer
   }
 }
