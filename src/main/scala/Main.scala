@@ -1,12 +1,16 @@
+package metrics4j
 
+
+import org.apache.logging.log4j.{Level, LogManager}
 import org.apache.logging.log4j.core.config.Configurator
-import org.apache.logging.log4j.{Level, LogManager, Logger}
-import org.apache.logging.log4j.scala.Logging
+import org.apache.logging.log4j.scala.{Logger, Logging}
 
 
-object Main extends Logging {
+class HelloWorld {
 
-  // val log: Logger = LogManager.getRootLogger
+  val indicator: String = "hello world"
+  val logger: Logger = Logger(getClass)
+
   Configurator.setRootLevel(Level.ALL)
 
   def doStuff(): Unit = {
@@ -15,14 +19,15 @@ object Main extends Logging {
   def doStuffWithLevel(level: Level): Unit = {
     print(s"Trying log level: ${level.name}\t:  ")
     logger(level, "Doing stuff with arbitrary level")
+    println()
   }
 
 
   def main(args: Array[String]): Unit = {
-    println("Hello, world!")
+    println(s"indicator: $indicator")
     doStuffWithLevel(Level.ALL)
-    doStuffWithLevel(Level.INFO)
     doStuffWithLevel(Level.DEBUG)
+    doStuffWithLevel(Level.INFO)
     doStuffWithLevel(Level.WARN)
     doStuffWithLevel(Level.ERROR)
     doStuffWithLevel(Level.FATAL)
